@@ -4,7 +4,6 @@ const { Server } = require('socket.io');
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
-const { exec } = require('child_process');
 
 const app = express();
 const server = http.createServer(app);
@@ -19,14 +18,11 @@ const prisma = new PrismaClient();
 app.use(cors());
 app.use(express.json());
 
-// Función para inicializar la base de datos
 async function initializeDatabase() {
   try {
-    // Verificar si la tabla User existe
     const userCount = await prisma.$queryRaw`SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'User'`;
     if (userCount[0].count == 0) {
       console.log('La tabla User no existe, aplicando migración...');
-      // Aplicar migración automáticamente (esto crea la tabla si no existe)
       await prisma.$executeRaw`CREATE TABLE IF NOT EXISTS "User" (
         id SERIAL PRIMARY KEY,
         username VARCHAR(255) UNIQUE NOT NULL,
@@ -44,12 +40,10 @@ async function initializeDatabase() {
   }
 }
 
-// Ejecutar la inicialización al arrancar el servidor
 initializeDatabase().then(() => {
   console.log('Inicialización de la base de datos completada.');
 });
 
-// Registro de usuario
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -63,7 +57,6 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Inicio de sesión
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   const user = await prisma.user.findUnique({ where: { username } });
@@ -74,7 +67,6 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// WebRTC Signaling
 io.on('connection', (socket) => {
   console.log('Usuario conectado:', socket.id);
 
