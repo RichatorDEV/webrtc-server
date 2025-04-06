@@ -9,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // Permitir todas las conexiones (ajusta según tu dominio de GitHub Pages)
+    origin: "*", // Ajusta según tu dominio de GitHub Pages en producción
     methods: ["GET", "POST"]
   }
 });
@@ -86,6 +86,10 @@ io.on('connection', (socket) => {
 
   socket.on('ice-candidate', ({ candidate, to }) => {
     io.to(to).emit('ice-candidate', { candidate, from: socket.username });
+  });
+
+  socket.on('reject', ({ to }) => {
+    io.to(to).emit('reject');
   });
 
   socket.on('disconnect', () => {
