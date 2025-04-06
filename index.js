@@ -3,15 +3,51 @@ const http = require('http');
 const { Server } = require('socket.io');
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
-const path = require('path');
+const cors = require('cors');
+const { exec } = require('child_process');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Permitir todas las conexiones (ajusta según tu dominio de GitHub Pages)
+    methods: ["GET", "POST"]
+  }
+});
 const prisma = new PrismaClient();
 
-app.use(express.static(path.join(__dirname, '../client')));
+app.use(cors());
 app.use(express.json());
+
+// Función para inicializar la base de datos
+async function initializeDatabase() {
+  try {
+    // Verificar si la tabla User existe
+    const userCount = await prisma.$queryRaw`SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'User'`;
+    if (userCount[0].count == 0) {
+      console.log('La tabla User no existe, aplicando migración...');
+      // Aplicar migración automáticamente (esto crea la tabla si no existe)
+      await prisma.$executeRaw`CREATE TABLE IF NOT EXISTS "User" (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW()
+      )`;
+      console.log('Tabla User creada exitosamente.');
+    } else {
+      console.log('La tabla User ya existe, no se requiere acción.');
+    }
+  } catch (error) {
+    console.error('Error al inicializar la base de datos:', error);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+// Ejecutar la inicialización al arrancar el servidor
+initializeDatabase().then(() => {
+  console.log('Inicialización de la base de datos completada.');
+});
 
 // Registro de usuario
 app.post('/register', async (req, res) => {
