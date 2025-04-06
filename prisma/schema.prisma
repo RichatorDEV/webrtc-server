@@ -12,4 +12,12 @@ model User {
   username  String   @unique
   password  String
   createdAt DateTime @default(now())
+  ringtone  Ringtone?
+}
+
+model Ringtone {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  filePath  String
+  user      User     @relation(fields: [userId], references: [id])
 }
