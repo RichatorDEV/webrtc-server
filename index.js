@@ -18,7 +18,6 @@ const io = new Server(server, {
 });
 const prisma = new PrismaClient();
 
-// Configurar multer para almacenar archivos
 const storage = multer.diskStorage({
   destination: './uploads',
   filename: (req, file, cb) => {
@@ -29,16 +28,14 @@ const upload = multer({ storage });
 
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static('uploads')); // Servir archivos subidos
+app.use('/uploads', express.static('uploads'));
 
-// Crear directorio uploads si no existe
 if (!fs.existsSync('./uploads')) {
   fs.mkdirSync('./uploads');
 }
 
 async function initializeDatabase() {
   try {
-    // Verificar y crear tabla User
     const userCount = await prisma.$queryRaw`SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'User'`;
     if (userCount[0].count == 0) {
       console.log('Creando tabla User...');
@@ -50,7 +47,6 @@ async function initializeDatabase() {
       )`;
     }
 
-    // Verificar y crear tabla Ringtone
     const ringtoneCount = await prisma.$queryRaw`SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'Ringtone'`;
     if (ringtoneCount[0].count == 0) {
       console.log('Creando tabla Ringtone...');
@@ -152,6 +148,10 @@ io.on('connection', (socket) => {
 
   socket.on('reject', ({ to }) => {
     io.to(to).emit('reject');
+  });
+
+  socket.on('hangup', ({ to }) => {
+    io.to(to).emit('hangup');
   });
 
   socket.on('disconnect', () => {
