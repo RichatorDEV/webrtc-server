@@ -125,6 +125,16 @@ app.get('/get-ringtone', async (req, res) => {
   }
 });
 
+app.get('/check-user', async (req, res) => {
+  const { username } = req.query;
+  try {
+    const user = await prisma.user.findUnique({ where: { username } });
+    res.json({ exists: !!user });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al verificar usuario' });
+  }
+});
+
 io.on('connection', (socket) => {
   console.log('Usuario conectado:', socket.id);
 
